@@ -246,7 +246,13 @@ NSString *const QGMP4HWDErrorDomain = @"QGMP4HWDErrorDomain";
         });
         
         if (status == kVTInvalidSessionErr) {
-            CFRelease(sampleBuffer);
+            if (@available(iOS 18, *)) {
+                //iOS18 beta版不稳定，beta1会crash，原因是当App退到后台后，会出现error的情况，而出现这个情况时，会先走到 handleDecodePixelBuffer 方法，这个方法里也会 CFRelease(sampleBuffer); 两次调用CFRelease会导致crash
+                //在beta2中目前不回crash，是因为app退到后台后，不会出现 kVTInvalidSessionErr的情况
+                //所以先临时这样处理
+            } else {
+                CFRelease(sampleBuffer);
+            }
             
             // 防止陷入死循环
             if (_invalidRetryCount >= 3) {
